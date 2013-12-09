@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Copyright (C) 2012 Paul Twohey.
+# Copyright (C) 2012-2013 Paul Twohey.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,39 +14,32 @@
 # limitations under the License.
 require 'net/http'
 require 'rexml/document'
-require 'english'
+require 'English'
 require 'tempfile'
 
 ###
 ### Configuration variables
 ###
-# Set this to true to enable smooth text rendering on retina displays.
-USE_RETINA_IF_AVAILABLE = true
-
 # Eclipse version. This is where you can customize the binary to install.
-ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/juno/SR1/eclipse-java-juno-SR1'
+ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/kepler/SR1/eclipse-jee-kepler-SR1'
 
 # Plugins to install. 
 PLUGINS = []
 PLUGINS << { pkg: 'AnyEditTools.feature.group', url: 'http://andrei.gmxhome.de/eclipse/' }
-PLUGINS << { pkg: 'org.eclipse.egit.feature.group', url: 'http://download.eclipse.org/egit/updates' }
-PLUGINS << { pkg: 'org.testng.eclipse.feature.group', url: 'http://beust.com/eclipse/' }
-PLUGINS << { pkg: 'org.eclipse.m2e.feature.feature.group', url: 'http://download.eclipse.org/technology/m2e/releases' }
-PLUGINS << { pkg: 'net.sourceforge.pmd.eclipse.feature.group', url: 'http://pmd.sf.net/eclipse' }
+PLUGINS << { pkg: 'ch.acanda.eclipse.pmd.feature.feature.group', url: 'http://www.acanda.ch/eclipse-pmd/release/latest' }
 
+gatekeeper = false
 
 ## Detect which platform we are installing on.
 type = "#{`uname`.strip} #{`uname -m`.strip}"
 puts "*** Detected #{type}"
 case type 
 when "Darwin x86_64"
-  ENABLE_RETINA = true && USE_RETINA_IF_AVAILABLE
   ECLIPSE_VERSION = "#{ECLIPSE_VERSION_BASE}-macosx-cocoa-x86_64.tar.gz"
+  gatekeeper = true
 when "Linux x86_64"
-  ENABLE_RETINA = false
   ECLIPSE_VERSION = "#{ECLIPSE_VERSION_BASE}-linux-gtk-x86_64.tar.gz"
 when /Linux i(386|486|586|686)/
-  ENABLE_RETINA = false
   ECLIPSE_VERSION = "#{ECLIPSE_VERSION_BASE}-linux-gtk.tar.gz"
 else
   $stderr.puts "ERROR: Unsupported install type: #{type}"
@@ -144,37 +137,6 @@ def download_eclipse(eclipse_version)
   run_and_check_err("rm #{tar_file}")
 end
 
-# Enable retina displays if requested. For eclipse Juno this is
-# documented at https://bugs.eclipse.org/bugs/show_bug.cgi?id=382972
-def enable_retina()
-  # Check if the retina display is already enabled
-  File.open("eclipse/Eclipse.app/Contents/Info.plist") do |file|
-    file.lines.each do |line|
-      if line =~ /Hack to enable Retina display of text/
-        puts "*** Retina display already enabled"
-        return
-      end
-    end
-  end
-
-  puts "*** Enabling retina text for eclipse"
-  patch = <<END
-70a71,73
-> 	<!-- Hack to enable Retina display of text. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=382972 -->
-> 	<key>NSHighResolutionCapable</key>
-> 	<true/>
-END
-  file = Tempfile.new('retina-patch')
-  begin
-    file.puts(patch)
-    file.flush
-    run_and_check_err("patch eclipse/Eclipse.app/Contents/Info.plist #{file.path}")
-  ensure
-    file.close
-    file.unlink
-  end
-end
-
 # Install the plugins we want. To make matters simpler, the plugins are
 # installed one at a time, and are tagged between each installation in
 # order to provide some measure of debuggability if (when) things go wrong.
@@ -216,7 +178,16 @@ else
   puts "*** Eclipse already downloaded, skipping downloading again"
 end
 
-enable_retina() if ENABLE_RETINA
+if gatekeeper then
+  `spctl -a eclipse/Eclipse.app`
+  if $?.success? then
+    puts "*** Gatekeeper already configured to allow eclipse to run"
+  else
+    puts "*** configuring Gatekeeper to allow eclipse to run"
+    run_and_check_err('spctl --add --label "Eclipse" eclipse/Eclipse.app')
+  end
+end
+
 install_plugins(PLUGINS)
 
 puts "*** Done"
