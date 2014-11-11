@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Copyright (C) 2012-2013 Paul Twohey.
+# Copyright (C) 2012-2014 Paul Twohey.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ require 'tempfile'
 ### Configuration variables
 ###
 # Eclipse version. This is where you can customize the binary to install.
-ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/kepler/SR1/eclipse-jee-kepler-SR1'
+ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/luna/SR1/eclipse-jee-luna-SR1'
 
 # Plugins to install. 
 PLUGINS = []
 PLUGINS << { pkg: 'AnyEditTools.feature.group', url: 'http://andrei.gmxhome.de/eclipse/' }
 PLUGINS << { pkg: 'ch.acanda.eclipse.pmd.feature.feature.group', url: 'http://www.acanda.ch/eclipse-pmd/release/latest' }
+PLUGINS << { pkg: 'com.mountainminds.eclemma.feature.feature.group', url: 'http://update.eclemma.org/' }
+PLUGINS << { pkg: 'org.testng.eclipse.feature.group', url: 'http://beust.com/eclipse' }
 
 gatekeeper = false
 
