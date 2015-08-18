@@ -21,7 +21,7 @@ require 'tempfile'
 ### Configuration variables
 ###
 # Eclipse version. This is where you can customize the binary to install.
-ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/luna/SR1/eclipse-jee-luna-SR1'
+ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/mars/R/eclipse-jee-mars-R'
 
 # Plugins to install. 
 PLUGINS = []
@@ -38,11 +38,14 @@ puts "*** Detected #{type}"
 case type 
 when "Darwin x86_64"
   ECLIPSE_VERSION = "#{ECLIPSE_VERSION_BASE}-macosx-cocoa-x86_64.tar.gz"
+  ECLIPSE_BIN_PATH = "./Eclipse.app/Contents/MacOS/eclipse"
   gatekeeper = true
 when "Linux x86_64"
   ECLIPSE_VERSION = "#{ECLIPSE_VERSION_BASE}-linux-gtk-x86_64.tar.gz"
+  ECLIPSE_BIN_PATH = "./eclipse/eclipse"
 when /Linux i(386|486|586|686)/
   ECLIPSE_VERSION = "#{ECLIPSE_VERSION_BASE}-linux-gtk.tar.gz"
+  ECLIPSE_BIN_PATH = "./eclipse/eclipse"
 else
   $stderr.puts "ERROR: Unsupported install type: #{type}"
   exit 1
@@ -72,7 +75,7 @@ end
 # Given a list of plugins, return a list of plugins which
 # are already installed in eclipse/eclipse.
 def filter_installed_plugins(plugins)
-   out = run_and_check_err('./eclipse/eclipse -nosplash -application org.eclipse.equinox.p2.director -listInstalledRoots')
+   out = run_and_check_err("#{ECLIPSE_BIN_PATH} -nosplash -application org.eclipse.equinox.p2.director -listInstalledRoots")
   # There are two types of plugins listed, just names, or names with versions
   missing = plugins.clone
   out.lines.each do |line|
@@ -155,7 +158,7 @@ def install_plugins(plugins)
     puts "** Installing #{pkg} from #{url}"
     human_name = pkg.split('/').first
     cmd = <<END
-./eclipse/eclipse -nosplash -application org.eclipse.equinox.p2.director \
+#{ECLIPSE_BIN_PATH} -nosplash -application org.eclipse.equinox.p2.director \
  -repository '#{url}' \
  -installIU '#{pkg}' \
  -tag #{human_name}
@@ -174,14 +177,14 @@ end
 ###
 ### Run the installation
 ###
-if !File.directory?('eclipse')
+if !File.executable?(ECLIPSE_BIN_PATH)
   download_eclipse(ECLIPSE_VERSION)
 else
   puts "*** Eclipse already downloaded, skipping downloading again"
 end
 
 if gatekeeper then
-  `spctl -a eclipse/Eclipse.app`
+  `spctl -a Eclipse.app`
   if $?.success? then
     puts "*** Gatekeeper already configured to allow eclipse to run"
   else
