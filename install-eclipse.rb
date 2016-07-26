@@ -21,7 +21,7 @@ require 'tempfile'
 ### Configuration variables
 ###
 # Eclipse version. This is where you can customize the binary to install.
-ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/mars/R/eclipse-jee-mars-R'
+ECLIPSE_VERSION_BASE = '/technology/epp/downloads/release/neon/R/eclipse-jee-neon-R'
 
 # Plugins to install. 
 PLUGINS = []
